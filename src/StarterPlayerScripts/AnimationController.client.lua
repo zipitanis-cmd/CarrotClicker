@@ -56,9 +56,9 @@ end
 -- ── Glow Ring Pulse (continuous) ─────────────────────────────────────────────
 local function startGlowPulse()
 	local function doPulse()
-		tween(glowRing, { BackgroundTransparency = 0.0, Size = UDim2.new(1.04, 0, 1.04, 0) }, 1.0, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut)
+		tween(glowRing, { BackgroundTransparency = 0.65, Size = UDim2.new(1.14, 0, 1.14, 0) }, 1.0, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut)
 		task.delay(1.0, function()
-			tween(glowRing, { BackgroundTransparency = 0.15, Size = UDim2.new(1.0, 0, 1.0, 0) }, 1.0, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut)
+			tween(glowRing, { BackgroundTransparency = 0.82, Size = UDim2.new(1.08, 0, 1.08, 0) }, 1.0, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut)
 		end)
 	end
 

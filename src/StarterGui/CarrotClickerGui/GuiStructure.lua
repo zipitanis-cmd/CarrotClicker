@@ -1,67 +1,44 @@
 -- GuiStructure.lua
--- Documents the complete ScreenGui hierarchy for Carrot Clicker.
--- This file serves as both documentation AND as the reference used by
--- BuildScripts/BuildAll.lua when constructing the GUI tree in Roblox Studio.
+-- Documents the complete ScreenGui hierarchy for Carrot Clicker (Phase 1 v2).
+-- Uses IgnoreGuiInset=true and fixed-pixel sizing for consistency across screen sizes.
+--
+-- Layout dimensions:
+--   TOP_H    = 52px  (TopBar)
+--   BOTTOM_H = 48px  (BottomBar)
+--   RAIL_W   = 60px  (LeftRail)
+--   PANEL_W  = 290px (RightPanel / Upgrades)
+--   MainArea = fills remaining space between rails
 --
 -- Tree notation:
---   ScreenGui (CarrotClickerGui)
---   ├── Background                     Frame, full-screen dark base
---   │   ├── FineGrid                   ImageLabel, tile grid overlay (fine)
---   │   ├── CoarseGrid                 ImageLabel, tile grid overlay (coarse)
---   │   ├── CenterGlow                 ImageLabel, radial gradient behind carrot
---   │   └── Vignette                   ImageLabel, dark edges vignette
---   ├── TopBar                         Frame, ~9% screen height
---   │   ├── Title                      TextLabel  "🥕 Carrot Clicker"
---   │   ├── CurrencyDisplay            Frame
---   │   │   ├── CarrotsAmount          TextLabel  (large, orange, bold)
---   │   │   ├── PerSec                 TextLabel  "/s"
---   │   │   └── PerClick               TextLabel  "/click"
---   │   └── RightGroup                 Frame
---   │       ├── SeedsAmount            TextLabel  (Seeds: 0)
---   │       └── SettingsButton         TextButton  "⚙"
---   ├── LeftRail                        Frame, ~75px wide, full height below TopBar
---   │   ├── HomeTab                    TextButton  "🏠"
---   │   ├── UpgradesTab                TextButton  "⬆"
---   │   ├── ReplantTab                 TextButton  "🌱" (locked)
---   │   ├── PetsTab                    TextButton  "🐇" (locked)
---   │   ├── QuestsTab                  TextButton  "📋" (locked)
---   │   └── ShopTab                    TextButton  "🛒" (locked)
---   ├── MainArea                        Frame, center play zone
---   │   ├── CarrotButtonPlate          Frame  circular plate
---   │   │   ├── GlowRing               Frame  pulsing outer ring
---   │   │   └── CarrotButton           ImageButton  "🥕" (large)
---   │   ├── FloatingTextLayer          Frame, clipsDescendants=false (floating +N numbers spawn here)
---   │   ├── StreakMeter                Frame
---   │   │   ├── StreakLabel            TextLabel  "Harvest Streak: 0x"
---   │   │   ├── StreakBarBg            Frame  bar background
---   │   │   │   └── StreakBarFill      Frame  bar fill
---   │   │   └── StreakLostLabel        TextLabel  "Streak Lost!" (hidden)
---   │   └── MilestoneTracker           Frame
---   │       ├── MilestoneLabel         TextLabel  "Next Unlock: First Harvest"
---   │       ├── MilestoneBarBg         Frame
---   │       │   └── MilestoneBarFill   Frame
---   │       └── RewardChip             TextLabel  (shows reward name, hidden by default)
---   ├── RightPanel                      Frame, ~30% screen width
---   │   ├── PanelHeader                TextLabel  "Upgrades"
---   │   ├── CategoryTabs               Frame  (horizontal tab strip)
---   │   │   ├── TabClick               TextButton  "Click"
---   │   │   ├── TabIdle                TextButton  "Idle"
---   │   │   ├── TabBoosts              TextButton  "Boosts"
---   │   │   └── TabUnlocks             TextButton  "Unlocks"
---   │   └── UpgradeScrollFrame         ScrollingFrame
---   │       └── UpgradeListLayout      UIListLayout
---   │           (Upgrade cards are cloned here at runtime by GameClient)
---   └── BottomBar                       Frame, ~7% screen height
---       ├── BuyModeX1                  TextButton  "x1"
---       ├── BuyModeX10                 TextButton  "x10"
---       ├── BuyModeX100                TextButton  "x100"
---       ├── BuyModeMax                 TextButton  "Max"
---       └── AutoToggle                 TextButton  "Auto 🔒" (locked)
+--   ScreenGui (CarrotClickerGui) -- IgnoreGuiInset=true
+--   Background (full-screen, dark #12121e)
+--     FineGrid, CoarseGrid, CenterGlow
+--   TopBar (52px fixed, full-width)
+--     BottomLine, Title, CurrencyDisplay (CarrotsAmount, StatsRow > PerSec/PerClick)
+--     RightGroup (SeedsAmount, SettingsButton)
+--   LeftRail (60px wide, full height between bars)
+--     HomeTab, UpgradesTab, ReplantTab(*), PetsTab(*), QuestsTab(*), ShopTab(*)
+--     (*) locked tabs have a LockBadge child label
+--   RightPanel (290px wide, full height between bars)
+--     LeftLine, PanelHeaderRow (PanelHeader, HeaderDivider)
+--     CategoryTabs (TabClick, TabIdle, TabBoosts, TabUnlocks)
+--     UpgradeScrollFrame (UIListLayout + runtime upgrade cards)
+--   MainArea (fills space between rails, below TopBar, above BottomBar)
+--     CarrotButtonPlate (230x230, centred at 0.5,0.42)
+--       GlowRing (1.08 scale, pulses to 1.14)
+--       CarrotButton (0.90 scale, emoji "🥕")
+--     FloatingTextLayer (clipsDescendants=false)
+--     StreakMeter (280px wide, centred at 0.5,0.70)
+--       StreakLabel, StreakBarBg > StreakBarFill, StreakLostLabel
+--     MilestoneTracker (280px wide, centred at 0.5,0.82)
+--       MilestoneLabel, MilestoneBarBg > MilestoneBarFill, RewardChip
+--   BottomBar (48px fixed, full-width, pinned to bottom)
+--     TopLine, BuyModeX1, BuyModeX10, BuyModeX100, BuyModeMax, AutoToggle
+--   PopupsLayer (ZIndex=50, full-screen)
 
--- This module simply returns the structure description as a table for reference.
 local GuiStructure = {
-	description = "CarrotClickerGui full ScreenGui hierarchy — see file comments for tree.",
-	version     = "Phase1",
+description = "CarrotClickerGui full ScreenGui hierarchy — see file comments for tree.",
+version     = "Phase1-v2",
 }
 
 return GuiStructure

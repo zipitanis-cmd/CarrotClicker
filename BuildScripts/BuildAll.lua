@@ -377,27 +377,36 @@ print("[BuildAll] Server scripts created.")
 -- ╚══════════════════════════════════════════════════════════════════════════════
 print("[BuildAll] Building GUI hierarchy...")
 
+-- Fixed-pixel dimensions for consistent cross-resolution layout
+local TOP_H    = 52   -- TopBar height in pixels
+local BOTTOM_H = 48   -- BottomBar height in pixels
+local RAIL_W   = 60   -- Left rail width in pixels
+local PANEL_W  = 290  -- Right upgrades panel width in pixels
+
 wipe(SG, "CarrotClickerGui")
 local screenGui = Instance.new("ScreenGui")
 screenGui.Name            = "CarrotClickerGui"
 screenGui.ResetOnSpawn    = false
 screenGui.ZIndexBehavior  = Enum.ZIndexBehavior.Sibling
+-- Extend under the Roblox CoreGui top bar so nothing bleeds through
+screenGui.IgnoreGuiInset  = true
 screenGui.Parent          = SG
 
--- ── Color constants (for GUI building) ───────────────────────────────────────
-local C_BASE     = Color3.fromRGB(26, 26, 46)
-local C_PANEL    = Color3.fromRGB(35, 35, 60)
+-- ── Color constants ───────────────────────────────────────────────────────────
+local C_BASE     = Color3.fromRGB(18, 18, 32)
+local C_PANEL    = Color3.fromRGB(28, 28, 50)
+local C_PANEL2   = Color3.fromRGB(38, 38, 64)
 local C_ACCENT   = Color3.fromRGB(255, 165, 0)
 local C_GREEN    = Color3.fromRGB(76, 175, 80)
 local C_TEXT     = Color3.fromRGB(255, 255, 255)
-local C_TEXT2    = Color3.fromRGB(180, 180, 200)
-local C_MUTED    = Color3.fromRGB(120, 120, 140)
-local C_LOCKED   = Color3.fromRGB(60, 60, 80)
-local C_BORDER   = Color3.fromRGB(50, 50, 75)
-local C_RED      = Color3.fromRGB(220, 50, 50)
+local C_TEXT2    = Color3.fromRGB(170, 170, 195)
+local C_MUTED    = Color3.fromRGB(110, 110, 135)
+local C_LOCKED   = Color3.fromRGB(48, 48, 72)
+local C_BORDER   = Color3.fromRGB(55, 55, 85)
+local C_RED      = Color3.fromRGB(220, 60, 60)
 local C_GOLD     = Color3.fromRGB(255, 215, 0)
 
--- ── Helper for a plain TextLabel ─────────────────────────────────────────────
+-- ── Helper: plain TextLabel ───────────────────────────────────────────────────
 local function makeLabel(parent, name, text, size, pos, textSize, font, color, xAlign)
 	local l = Instance.new("TextLabel")
 	l.Name                   = name
@@ -424,9 +433,7 @@ bg.BorderSizePixel        = 0
 bg.ZIndex                 = 1
 bg.Parent                 = screenGui
 
--- Fine grid (simulated via Frame — 1px lines need ImageLabel with tile texture;
--- without custom assets we create a subtle repeating dot using UIStroke pattern)
--- We use a semi-transparent overlay Frame to approximate the effect.
+-- Subtle dot-grid overlay (very transparent)
 local fineGrid = Instance.new("Frame")
 fineGrid.Name                   = "FineGrid"
 fineGrid.Size                   = UDim2.new(1,0,1,0)
@@ -445,68 +452,55 @@ coarseGrid.BorderSizePixel        = 0
 coarseGrid.ZIndex                 = 3
 coarseGrid.Parent                 = bg
 
--- Centre glow (radial gradient approximated with a large rounded Frame)
-local glow = Instance.new("Frame")
-glow.Name                   = "CenterGlow"
-glow.Size                   = UDim2.new(0.5,0,0.6,0)
-glow.AnchorPoint            = Vector2.new(0.5,0.5)
-glow.Position               = UDim2.new(0.5,0,0.5,0)
-glow.BackgroundColor3       = Color3.fromRGB(255,140,0)
-glow.BackgroundTransparency = 0.92
-glow.BorderSizePixel        = 0
-glow.ZIndex                 = 4
-glow.Parent                 = bg
-local glowCorner = Instance.new("UICorner")
-glowCorner.CornerRadius = UDim.new(1,0)
-glowCorner.Parent = glow
-
--- Vignette
-local vign = Instance.new("Frame")
-vign.Name                   = "Vignette"
-vign.Size                   = UDim2.new(1,0,1,0)
-vign.BackgroundColor3       = Color3.fromRGB(0,0,0)
-vign.BackgroundTransparency = 0.55
-vign.BorderSizePixel        = 0
-vign.ZIndex                 = 5
-vign.Parent                 = bg
--- UIGradient for vignette (edges darker)
-local vigGrad = Instance.new("UIGradient")
-vigGrad.Color     = ColorSequence.new({
-	ColorSequenceKeypoint.new(0,   Color3.fromRGB(0,0,0)),
-	ColorSequenceKeypoint.new(0.3, Color3.fromRGB(0,0,0)),
-	ColorSequenceKeypoint.new(0.5, Color3.fromRGB(255,255,255)),
-	ColorSequenceKeypoint.new(0.7, Color3.fromRGB(0,0,0)),
-	ColorSequenceKeypoint.new(1,   Color3.fromRGB(0,0,0)),
-})
-vigGrad.Transparency = NumberSequence.new({
-	NumberSequenceKeypoint.new(0,   0.5),
-	NumberSequenceKeypoint.new(0.3, 0.85),
-	NumberSequenceKeypoint.new(0.5, 1.0),
-	NumberSequenceKeypoint.new(0.7, 0.85),
-	NumberSequenceKeypoint.new(1,   0.5),
-})
-vigGrad.Parent = vign
+-- Subtle warm radial glow centred behind the carrot area (much smaller than before)
+local bgGlow = Instance.new("Frame")
+bgGlow.Name                   = "CenterGlow"
+bgGlow.Size                   = UDim2.new(0,320,0,320)
+bgGlow.AnchorPoint            = Vector2.new(0.5,0.5)
+bgGlow.Position               = UDim2.new(0.5,-(PANEL_W/2),0.5,0)
+bgGlow.BackgroundColor3       = Color3.fromRGB(255,130,0)
+bgGlow.BackgroundTransparency = 0.97
+bgGlow.BorderSizePixel        = 0
+bgGlow.ZIndex                 = 4
+bgGlow.Parent                 = bg
+local bgGlowCorner = Instance.new("UICorner")
+bgGlowCorner.CornerRadius = UDim.new(1,0)
+bgGlowCorner.Parent = bgGlow
 
 -- ── TOP BAR ───────────────────────────────────────────────────────────────────
+-- Fixed pixel height so it looks identical on all screen sizes.
 local topBar = Instance.new("Frame")
 topBar.Name                   = "TopBar"
-topBar.Size                   = UDim2.new(1,0,0.09,0)
+topBar.Size                   = UDim2.new(1,0,0,TOP_H)
 topBar.Position               = UDim2.new(0,0,0,0)
 topBar.BackgroundColor3       = C_PANEL
-topBar.BackgroundTransparency = 0.15
+topBar.BackgroundTransparency = 0
 topBar.BorderSizePixel        = 0
 topBar.ZIndex                 = 10
 topBar.Parent                 = screenGui
 
--- Title
+-- Thin accent line at the bottom of the top bar for visual separation
+local topBarLine = Instance.new("Frame")
+topBarLine.Name              = "BottomLine"
+topBarLine.Size              = UDim2.new(1,0,0,1)
+topBarLine.AnchorPoint       = Vector2.new(0,1)
+topBarLine.Position          = UDim2.new(0,0,1,0)
+topBarLine.BackgroundColor3  = C_ACCENT
+topBarLine.BackgroundTransparency = 0.6
+topBarLine.BorderSizePixel   = 0
+topBarLine.ZIndex            = 11
+topBarLine.Parent            = topBar
+
+-- Title (left side)
 local titleLbl = makeLabel(topBar,"Title","🥕 Carrot Clicker",
-	UDim2.new(0.25,0,1,0), UDim2.new(0,8,0,0), 18, Enum.Font.GothamBold, C_ACCENT, Enum.TextXAlignment.Left)
+	UDim2.new(0,180,1,0), UDim2.new(0,12,0,0),
+	17, Enum.Font.GothamBold, C_ACCENT, Enum.TextXAlignment.Left)
 titleLbl.ZIndex = 11
 
--- Currency display (centre)
+-- Currency display (centred in top bar)
 local currDisp = Instance.new("Frame")
 currDisp.Name                   = "CurrencyDisplay"
-currDisp.Size                   = UDim2.new(0.5,0,1,0)
+currDisp.Size                   = UDim2.new(0,300,1,0)
 currDisp.AnchorPoint            = Vector2.new(0.5,0)
 currDisp.Position               = UDim2.new(0.5,0,0,0)
 currDisp.BackgroundTransparency = 1
@@ -514,22 +508,32 @@ currDisp.BorderSizePixel        = 0
 currDisp.ZIndex                 = 11
 currDisp.Parent                 = topBar
 
+-- Big carrot count
 local carrotsAmtLbl = makeLabel(currDisp,"CarrotsAmount","0",
-	UDim2.new(1,0,0.6,0), UDim2.new(0,0,0,0), 26, Enum.Font.GothamBold, C_ACCENT)
+	UDim2.new(1,0,0,30), UDim2.new(0,0,0,4),
+	24, Enum.Font.GothamBold, C_ACCENT)
 carrotsAmtLbl.ZIndex = 12
 
+-- /s and /click on the same row below (direct children of currDisp for easy WaitForChild access)
 local perSecLbl = makeLabel(currDisp,"PerSec","0/s",
-	UDim2.new(0.5,0,0.4,0), UDim2.new(0,0,0.6,0), 12, Enum.Font.Gotham, C_TEXT2)
+	UDim2.new(0,80,0,14), UDim2.new(0.5,-50,0,34),
+	12, Enum.Font.Gotham, C_TEXT2)
 perSecLbl.ZIndex = 12
 
+local statsDot = makeLabel(currDisp,"StatsDot","·",
+	UDim2.new(0,8,0,14), UDim2.new(0.5,-4,0,34),
+	12, Enum.Font.Gotham, C_MUTED)
+statsDot.ZIndex = 12
+
 local perClickLbl = makeLabel(currDisp,"PerClick","1/click",
-	UDim2.new(0.5,0,0.4,0), UDim2.new(0.5,0,0.6,0), 12, Enum.Font.Gotham, C_TEXT2)
+	UDim2.new(0,80,0,14), UDim2.new(0.5,-26,0,34),
+	12, Enum.Font.Gotham, C_TEXT2)
 perClickLbl.ZIndex = 12
 
--- Right group (seeds + settings)
+-- Right group: seeds + gear button
 local rightGroup = Instance.new("Frame")
 rightGroup.Name                   = "RightGroup"
-rightGroup.Size                   = UDim2.new(0.2,0,1,0)
+rightGroup.Size                   = UDim2.new(0,160,1,0)
 rightGroup.AnchorPoint            = Vector2.new(1,0)
 rightGroup.Position               = UDim2.new(1,-8,0,0)
 rightGroup.BackgroundTransparency = 1
@@ -538,18 +542,19 @@ rightGroup.ZIndex                 = 11
 rightGroup.Parent                 = topBar
 
 local seedsLbl = makeLabel(rightGroup,"SeedsAmount","🌱 Seeds: 0",
-	UDim2.new(0.7,0,1,0), UDim2.new(0,0,0,0), 13, Enum.Font.Gotham, C_TEXT2)
+	UDim2.new(1,-46,1,0), UDim2.new(0,0,0,0),
+	12, Enum.Font.Gotham, C_TEXT2, Enum.TextXAlignment.Right)
 seedsLbl.ZIndex = 12
 
 local settingsBtn = Instance.new("TextButton")
 settingsBtn.Name                = "SettingsButton"
 settingsBtn.Text                = "⚙"
-settingsBtn.Size                = UDim2.new(0,36,0,36)
+settingsBtn.Size                = UDim2.new(0,34,0,34)
 settingsBtn.AnchorPoint         = Vector2.new(1,0.5)
 settingsBtn.Position            = UDim2.new(1,0,0.5,0)
-settingsBtn.BackgroundColor3    = C_LOCKED
-settingsBtn.TextColor3          = C_TEXT
-settingsBtn.TextSize            = 18
+settingsBtn.BackgroundColor3    = C_PANEL2
+settingsBtn.TextColor3          = C_TEXT2
+settingsBtn.TextSize            = 16
 settingsBtn.Font                = Enum.Font.GothamBold
 settingsBtn.BorderSizePixel     = 0
 settingsBtn.ZIndex              = 12
@@ -557,22 +562,34 @@ settingsBtn.Parent              = rightGroup
 addCorner(settingsBtn, 8)
 
 -- ── LEFT RAIL ─────────────────────────────────────────────────────────────────
+-- Spans from below TopBar to above BottomBar.
 local leftRail = Instance.new("Frame")
 leftRail.Name                   = "LeftRail"
-leftRail.Size                   = UDim2.new(0,75,0.91,0)
-leftRail.Position               = UDim2.new(0,0,0.09,0)
+leftRail.Size                   = UDim2.new(0,RAIL_W,1,-(TOP_H+BOTTOM_H))
+leftRail.Position               = UDim2.new(0,0,0,TOP_H)
 leftRail.BackgroundColor3       = C_PANEL
-leftRail.BackgroundTransparency = 0.2
+leftRail.BackgroundTransparency = 0
 leftRail.BorderSizePixel        = 0
 leftRail.ZIndex                 = 10
 leftRail.Parent                 = screenGui
 
+-- Right border line on the rail
+local railLine = Instance.new("Frame")
+railLine.Name              = "RightLine"
+railLine.Size              = UDim2.new(0,1,1,0)
+railLine.AnchorPoint       = Vector2.new(1,0)
+railLine.Position          = UDim2.new(1,0,0,0)
+railLine.BackgroundColor3  = C_BORDER
+railLine.BorderSizePixel   = 0
+railLine.ZIndex            = 11
+railLine.Parent            = leftRail
+
 local railLayout = Instance.new("UIListLayout")
-railLayout.Padding          = UDim.new(0, 4)
-railLayout.SortOrder        = Enum.SortOrder.LayoutOrder
-railLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
-railLayout.Parent           = leftRail
-addPadding(leftRail, 6, 4, 6, 4)
+railLayout.Padding                  = UDim.new(0, 4)
+railLayout.SortOrder                = Enum.SortOrder.LayoutOrder
+railLayout.HorizontalAlignment      = Enum.HorizontalAlignment.Center
+railLayout.Parent                   = leftRail
+addPadding(leftRail, 8, 5, 8, 5)
 
 local railTabs = {
 	{name="HomeTab",     icon="🏠", locked=false, order=1},
@@ -585,210 +602,88 @@ local railTabs = {
 for _, td in ipairs(railTabs) do
 	local btn = Instance.new("TextButton")
 	btn.Name             = td.name
-	btn.Text             = td.icon .. (td.locked and "\n🔒" or "")
-	btn.Size             = UDim2.new(1,-8,0,54)
-	btn.BackgroundColor3 = td.locked and C_LOCKED or C_PANEL
-	btn.BackgroundTransparency = td.locked and 0.3 or 0.0
+	-- Icon only — no stacked emoji+lock text; lock state shown via colour
+	btn.Text             = td.icon
+	btn.Size             = UDim2.new(1,-4,0,44)
+	btn.BackgroundColor3 = td.locked and C_LOCKED or C_PANEL2
+	btn.BackgroundTransparency = td.locked and 0.2 or 0.0
 	btn.TextColor3       = td.locked and C_MUTED or C_TEXT
-	btn.TextSize         = 20
+	btn.TextSize         = 22
 	btn.Font             = Enum.Font.GothamMedium
 	btn.BorderSizePixel  = 0
 	btn.LayoutOrder      = td.order
 	btn.ZIndex           = 11
 	btn.Parent           = leftRail
 	addCorner(btn, 8)
+
+	-- Small lock badge in bottom-right corner of locked tabs
+	if td.locked then
+		local badge = Instance.new("TextLabel")
+		badge.Name                   = "LockBadge"
+		badge.Text                   = "🔒"
+		badge.Size                   = UDim2.new(0,16,0,16)
+		badge.AnchorPoint            = Vector2.new(1,1)
+		badge.Position               = UDim2.new(1,0,1,0)
+		badge.BackgroundTransparency = 1
+		badge.BorderSizePixel        = 0
+		badge.TextSize               = 10
+		badge.Font                   = Enum.Font.Gotham
+		badge.ZIndex                 = 12
+		badge.Parent                 = btn
+	end
 end
 
--- ── MAIN AREA ────────────────────────────────────────────────────────────────
-local mainArea = Instance.new("Frame")
-mainArea.Name                   = "MainArea"
-mainArea.Size                   = UDim2.new(1,-75-8,0.84,0)
-mainArea.Position               = UDim2.new(0,75,0.09,0)
-mainArea.BackgroundTransparency = 1
-mainArea.BorderSizePixel        = 0
-mainArea.ZIndex                 = 10
-mainArea.Parent                 = screenGui
--- Right panel will overlay on top — MainArea shrinks by rightPanel width dynamically via script
-
--- Carrot button plate
-local carrotPlate = Instance.new("Frame")
-carrotPlate.Name                   = "CarrotButtonPlate"
-carrotPlate.Size                   = UDim2.new(0,200,0,200)
-carrotPlate.AnchorPoint            = Vector2.new(0.5,0.45)
-carrotPlate.Position               = UDim2.new(0.38,0,0.45,0)
-carrotPlate.BackgroundColor3       = Color3.fromRGB(45,45,75)
-carrotPlate.BackgroundTransparency = 0.1
-carrotPlate.BorderSizePixel        = 0
-carrotPlate.ZIndex                 = 11
-carrotPlate.Parent                 = mainArea
-addCorner(carrotPlate, 100)
-
--- Outer glow ring
-local glowRing = Instance.new("Frame")
-glowRing.Name                   = "GlowRing"
-glowRing.Size                   = UDim2.new(1,0,1,0)
-glowRing.AnchorPoint            = Vector2.new(0.5,0.5)
-glowRing.Position               = UDim2.new(0.5,0,0.5,0)
-glowRing.BackgroundColor3       = C_ACCENT
-glowRing.BackgroundTransparency = 0.15
-glowRing.BorderSizePixel        = 0
-glowRing.ZIndex                 = 11
-glowRing.Parent                 = carrotPlate
-addCorner(glowRing, 100)
--- UIStroke for ring outline
-local ringStroke = Instance.new("UIStroke")
-ringStroke.Color       = C_ACCENT
-ringStroke.Thickness   = 3
-ringStroke.Transparency = 0.3
-ringStroke.Parent      = glowRing
-
--- Carrot button
-local carrotBtn = Instance.new("TextButton")
-carrotBtn.Name                = "CarrotButton"
-carrotBtn.Text                = "🥕"
-carrotBtn.Size                = UDim2.new(0.88,0,0.88,0)
-carrotBtn.AnchorPoint         = Vector2.new(0.5,0.5)
-carrotBtn.Position            = UDim2.new(0.5,0,0.5,0)
-carrotBtn.BackgroundColor3    = Color3.fromRGB(255,140,0)
-carrotBtn.BackgroundTransparency = 0.0
-carrotBtn.TextSize            = 80
-carrotBtn.Font                = Enum.Font.GothamBold
-carrotBtn.TextColor3          = C_TEXT
-carrotBtn.BorderSizePixel     = 0
-carrotBtn.AutoButtonColor     = false
-carrotBtn.ZIndex              = 13
-carrotBtn.Parent              = carrotPlate
-addCorner(carrotBtn, 100)
--- Subtle inner UIStroke
-local btnStroke = Instance.new("UIStroke")
-btnStroke.Color      = Color3.fromRGB(255,200,80)
-btnStroke.Thickness  = 2
-btnStroke.Transparency = 0.5
-btnStroke.Parent     = carrotBtn
-
--- Floating text layer (parent for +N labels and particles)
-local floatLayer = Instance.new("Frame")
-floatLayer.Name                   = "FloatingTextLayer"
-floatLayer.Size                   = UDim2.new(1,0,1,0)
-floatLayer.BackgroundTransparency = 1
-floatLayer.BorderSizePixel        = 0
-floatLayer.ZIndex                 = 20
-floatLayer.ClipsDescendants       = false
-floatLayer.Parent                 = mainArea
-
--- ── Streak Meter ──────────────────────────────────────────────────────────────
-local streakMeter = Instance.new("Frame")
-streakMeter.Name                   = "StreakMeter"
-streakMeter.Size                   = UDim2.new(0.55,0,0,60)
-streakMeter.AnchorPoint            = Vector2.new(0.5,0)
-streakMeter.Position               = UDim2.new(0.38,0,0.72,0)
-streakMeter.BackgroundTransparency = 1
-streakMeter.BorderSizePixel        = 0
-streakMeter.ZIndex                 = 12
-streakMeter.Parent                 = mainArea
-
-local streakLabelObj = makeLabel(streakMeter,"StreakLabel","Harvest Streak: 0x",
-	UDim2.new(1,0,0,22), UDim2.new(0,0,0,0), 13, Enum.Font.GothamMedium, C_TEXT2)
-streakLabelObj.ZIndex = 13
-
-local streakBarBg = Instance.new("Frame")
-streakBarBg.Name                   = "StreakBarBg"
-streakBarBg.Size                   = UDim2.new(1,0,0,12)
-streakBarBg.Position               = UDim2.new(0,0,0,24)
-streakBarBg.BackgroundColor3       = Color3.fromRGB(40,40,65)
-streakBarBg.BackgroundTransparency = 0
-streakBarBg.BorderSizePixel        = 0
-streakBarBg.ZIndex                 = 13
-streakBarBg.ClipsDescendants       = true
-streakBarBg.Parent                 = streakMeter
-addCorner(streakBarBg, 6)
-
-local streakBarFill = Instance.new("Frame")
-streakBarFill.Name                   = "StreakBarFill"
-streakBarFill.Size                   = UDim2.new(0,0,1,0)
-streakBarFill.BackgroundColor3       = Color3.fromRGB(255,165,0)
-streakBarFill.BackgroundTransparency = 0
-streakBarFill.BorderSizePixel        = 0
-streakBarFill.ZIndex                 = 14
-streakBarFill.Parent                 = streakBarBg
-addCorner(streakBarFill, 6)
-
-local streakLostLbl = makeLabel(streakMeter,"StreakLostLabel","Streak Lost!",
-	UDim2.new(1,0,0,20), UDim2.new(0,0,0,40), 13, Enum.Font.GothamBold, C_RED)
-streakLostLbl.ZIndex   = 15
-streakLostLbl.Visible  = false
-
--- ── Milestone Tracker ────────────────────────────────────────────────────────
-local milestoneTrack = Instance.new("Frame")
-milestoneTrack.Name                   = "MilestoneTracker"
-milestoneTrack.Size                   = UDim2.new(0.55,0,0,60)
-milestoneTrack.AnchorPoint            = Vector2.new(0.5,0)
-milestoneTrack.Position               = UDim2.new(0.38,0,0.83,0)
-milestoneTrack.BackgroundTransparency = 1
-milestoneTrack.BorderSizePixel        = 0
-milestoneTrack.ZIndex                 = 12
-milestoneTrack.Parent                 = mainArea
-
-local msFillLbl = makeLabel(milestoneTrack,"MilestoneLabel","Next: First Harvest (0/100)",
-	UDim2.new(1,0,0,22), UDim2.new(0,0,0,0), 12, Enum.Font.Gotham, C_TEXT2)
-msFillLbl.ZIndex = 13
-
-local msBarBg = Instance.new("Frame")
-msBarBg.Name                   = "MilestoneBarBg"
-msBarBg.Size                   = UDim2.new(1,0,0,12)
-msBarBg.Position               = UDim2.new(0,0,0,24)
-msBarBg.BackgroundColor3       = Color3.fromRGB(40,40,65)
-msBarBg.BorderSizePixel        = 0
-msBarBg.ZIndex                 = 13
-msBarBg.ClipsDescendants       = true
-msBarBg.Parent                 = milestoneTrack
-addCorner(msBarBg, 6)
-
-local msBarFill = Instance.new("Frame")
-msBarFill.Name                   = "MilestoneBarFill"
-msBarFill.Size                   = UDim2.new(0,0,1,0)
-msBarFill.BackgroundColor3       = Color3.fromRGB(76,175,80)
-msBarFill.BorderSizePixel        = 0
-msBarFill.ZIndex                 = 14
-msBarFill.Parent                 = msBarBg
-addCorner(msBarFill, 6)
-
-local msRewardChip = makeLabel(milestoneTrack,"RewardChip","",
-	UDim2.new(1,0,0,20), UDim2.new(0,0,0,40), 13, Enum.Font.GothamBold, C_GOLD)
-msRewardChip.ZIndex   = 15
-msRewardChip.Visible  = false
-
 -- ── RIGHT PANEL (Upgrades) ────────────────────────────────────────────────────
+-- Fixed pixel width, spans from below TopBar to above BottomBar.
 local rightPanel = Instance.new("Frame")
 rightPanel.Name                   = "RightPanel"
-rightPanel.Size                   = UDim2.new(0.30,0,0.84,0)
+rightPanel.Size                   = UDim2.new(0,PANEL_W,1,-(TOP_H+BOTTOM_H))
 rightPanel.AnchorPoint            = Vector2.new(1,0)
-rightPanel.Position               = UDim2.new(1,0,0.09,0)
+rightPanel.Position               = UDim2.new(1,0,0,TOP_H)
 rightPanel.BackgroundColor3       = C_PANEL
-rightPanel.BackgroundTransparency = 0.1
+rightPanel.BackgroundTransparency = 0
 rightPanel.BorderSizePixel        = 0
 rightPanel.ZIndex                 = 12
 rightPanel.Parent                 = screenGui
-addCorner(rightPanel, 0)
 
--- Panel header
-local panelHeader = makeLabel(rightPanel,"PanelHeader","Upgrades",
-	UDim2.new(1,0,0,38), UDim2.new(0,0,0,0), 18, Enum.Font.GothamBold, C_ACCENT)
-panelHeader.ZIndex = 13
+-- Left border line on the right panel
+local panelLine = Instance.new("Frame")
+panelLine.Name              = "LeftLine"
+panelLine.Size              = UDim2.new(0,1,1,0)
+panelLine.BackgroundColor3  = C_BORDER
+panelLine.BorderSizePixel   = 0
+panelLine.ZIndex            = 13
+panelLine.Parent            = rightPanel
+
+-- Panel header row
+local panelHeaderRow = Instance.new("Frame")
+panelHeaderRow.Name                   = "PanelHeaderRow"
+panelHeaderRow.Size                   = UDim2.new(1,0,0,44)
+panelHeaderRow.BackgroundTransparency = 1
+panelHeaderRow.BorderSizePixel        = 0
+panelHeaderRow.ZIndex                 = 13
+panelHeaderRow.Parent                 = rightPanel
+
+local panelHeader = makeLabel(panelHeaderRow,"PanelHeader","Upgrades",
+	UDim2.new(1,-12,1,0), UDim2.new(0,12,0,0),
+	16, Enum.Font.GothamBold, C_ACCENT, Enum.TextXAlignment.Left)
+panelHeader.ZIndex = 14
+
 local headerDiv = Instance.new("Frame")
 headerDiv.Name                   = "HeaderDivider"
 headerDiv.Size                   = UDim2.new(1,0,0,1)
-headerDiv.Position               = UDim2.new(0,0,0,38)
+headerDiv.AnchorPoint            = Vector2.new(0,1)
+headerDiv.Position               = UDim2.new(0,0,1,0)
 headerDiv.BackgroundColor3       = C_BORDER
 headerDiv.BorderSizePixel        = 0
 headerDiv.ZIndex                 = 13
-headerDiv.Parent                 = rightPanel
+headerDiv.Parent                 = panelHeaderRow
 
 -- Category tabs
 local catTabs = Instance.new("Frame")
 catTabs.Name                   = "CategoryTabs"
-catTabs.Size                   = UDim2.new(1,0,0,36)
-catTabs.Position               = UDim2.new(0,0,0,40)
+catTabs.Size                   = UDim2.new(1,-8,0,32)
+catTabs.Position               = UDim2.new(0,4,0,48)
 catTabs.BackgroundTransparency = 1
 catTabs.BorderSizePixel        = 0
 catTabs.ZIndex                 = 13
@@ -796,7 +691,7 @@ catTabs.Parent                 = rightPanel
 
 local catLayout = Instance.new("UIListLayout")
 catLayout.FillDirection = Enum.FillDirection.Horizontal
-catLayout.Padding       = UDim.new(0,2)
+catLayout.Padding       = UDim.new(0,3)
 catLayout.SortOrder     = Enum.SortOrder.LayoutOrder
 catLayout.Parent        = catTabs
 
@@ -805,11 +700,11 @@ for _, ct in ipairs(catNames) do
 	local tb = Instance.new("TextButton")
 	tb.Name             = "Tab"..ct[1]
 	tb.Text             = ct[1]
-	tb.Size             = UDim2.new(0.25,-2,1,0)
+	tb.Size             = UDim2.new(0.25,-3,1,0)
 	tb.BackgroundColor3 = ct[2]==1 and C_ACCENT or C_LOCKED
-	tb.TextColor3       = ct[2]==1 and C_BASE or C_TEXT
+	tb.TextColor3       = ct[2]==1 and Color3.fromRGB(18,18,32) or C_TEXT2
 	tb.TextSize         = 12
-	tb.Font             = Enum.Font.GothamMedium
+	tb.Font             = Enum.Font.GothamBold
 	tb.BorderSizePixel  = 0
 	tb.LayoutOrder      = ct[2]
 	tb.ZIndex           = 14
@@ -819,75 +714,241 @@ end
 
 -- Scroll frame for upgrade cards
 local scrollFrame = Instance.new("ScrollingFrame")
-scrollFrame.Name                   = "UpgradeScrollFrame"
-scrollFrame.Size                   = UDim2.new(1,-8,1,-82)
-scrollFrame.Position               = UDim2.new(0,4,0,80)
-scrollFrame.BackgroundTransparency = 1
-scrollFrame.BorderSizePixel        = 0
-scrollFrame.ScrollBarThickness     = 4
-scrollFrame.ScrollBarImageColor3   = C_ACCENT
-scrollFrame.CanvasSize             = UDim2.new(0,0,0,400)
-scrollFrame.ZIndex                 = 13
-scrollFrame.Parent                 = rightPanel
+scrollFrame.Name                     = "UpgradeScrollFrame"
+scrollFrame.Size                     = UDim2.new(1,0,1,-88)
+scrollFrame.Position                 = UDim2.new(0,0,0,88)
+scrollFrame.BackgroundTransparency   = 1
+scrollFrame.BorderSizePixel          = 0
+scrollFrame.ScrollBarThickness       = 4
+scrollFrame.ScrollBarImageColor3     = C_ACCENT
+scrollFrame.CanvasSize               = UDim2.new(0,0,0,400)
+scrollFrame.ZIndex                   = 13
+scrollFrame.Parent                   = rightPanel
+addPadding(scrollFrame, 4, 8, 4, 8)
 
 local upgradeListLayout = Instance.new("UIListLayout")
 upgradeListLayout.Padding   = UDim.new(0,6)
 upgradeListLayout.SortOrder = Enum.SortOrder.LayoutOrder
 upgradeListLayout.Parent    = scrollFrame
-addPadding(scrollFrame, 4, 4, 4, 4)
+
+-- ── MAIN AREA ────────────────────────────────────────────────────────────────
+-- Fills the space between LeftRail, RightPanel, TopBar, and BottomBar.
+local mainArea = Instance.new("Frame")
+mainArea.Name                   = "MainArea"
+mainArea.Size                   = UDim2.new(1,-(RAIL_W+PANEL_W),1,-(TOP_H+BOTTOM_H))
+mainArea.Position               = UDim2.new(0,RAIL_W,0,TOP_H)
+mainArea.BackgroundTransparency = 1
+mainArea.BorderSizePixel        = 0
+mainArea.ZIndex                 = 10
+mainArea.Parent                 = screenGui
+
+-- Carrot button plate — perfectly centred in MainArea
+local carrotPlate = Instance.new("Frame")
+carrotPlate.Name                   = "CarrotButtonPlate"
+carrotPlate.Size                   = UDim2.new(0,230,0,230)
+carrotPlate.AnchorPoint            = Vector2.new(0.5,0.5)
+carrotPlate.Position               = UDim2.new(0.5,0,0.42,0)
+carrotPlate.BackgroundColor3       = Color3.fromRGB(38,38,68)
+carrotPlate.BackgroundTransparency = 0.0
+carrotPlate.BorderSizePixel        = 0
+carrotPlate.ZIndex                 = 11
+carrotPlate.Parent                 = mainArea
+addCorner(carrotPlate, 115)
+
+-- Outer glow ring (pulsed by AnimationController)
+local glowRing = Instance.new("Frame")
+glowRing.Name                   = "GlowRing"
+glowRing.Size                   = UDim2.new(1.08,0,1.08,0)
+glowRing.AnchorPoint            = Vector2.new(0.5,0.5)
+glowRing.Position               = UDim2.new(0.5,0,0.5,0)
+glowRing.BackgroundColor3       = C_ACCENT
+glowRing.BackgroundTransparency = 0.82
+glowRing.BorderSizePixel        = 0
+glowRing.ZIndex                 = 10
+glowRing.Parent                 = carrotPlate
+addCorner(glowRing, 122)
+
+-- Carrot button
+local carrotBtn = Instance.new("TextButton")
+carrotBtn.Name                   = "CarrotButton"
+carrotBtn.Text                   = "🥕"
+carrotBtn.Size                   = UDim2.new(0.90,0,0.90,0)
+carrotBtn.AnchorPoint            = Vector2.new(0.5,0.5)
+carrotBtn.Position               = UDim2.new(0.5,0,0.5,0)
+carrotBtn.BackgroundColor3       = Color3.fromRGB(255,145,0)
+carrotBtn.BackgroundTransparency = 0.0
+carrotBtn.TextSize               = 90
+carrotBtn.Font                   = Enum.Font.GothamBold
+carrotBtn.TextColor3             = C_TEXT
+carrotBtn.BorderSizePixel        = 0
+carrotBtn.AutoButtonColor        = false
+carrotBtn.ZIndex                 = 13
+carrotBtn.Parent                 = carrotPlate
+addCorner(carrotBtn, 115)
+
+-- Floating text layer (parent for +N labels and particles, clipsDescendants=false)
+local floatLayer = Instance.new("Frame")
+floatLayer.Name                   = "FloatingTextLayer"
+floatLayer.Size                   = UDim2.new(1,0,1,0)
+floatLayer.BackgroundTransparency = 1
+floatLayer.BorderSizePixel        = 0
+floatLayer.ZIndex                 = 20
+floatLayer.ClipsDescendants       = false
+floatLayer.Parent                 = mainArea
+
+-- ── Streak Meter (centred under carrot) ───────────────────────────────────────
+local streakMeter = Instance.new("Frame")
+streakMeter.Name                   = "StreakMeter"
+streakMeter.Size                   = UDim2.new(0,280,0,54)
+streakMeter.AnchorPoint            = Vector2.new(0.5,0)
+streakMeter.Position               = UDim2.new(0.5,0,0.70,0)
+streakMeter.BackgroundTransparency = 1
+streakMeter.BorderSizePixel        = 0
+streakMeter.ZIndex                 = 12
+streakMeter.Parent                 = mainArea
+
+local streakLabelObj = makeLabel(streakMeter,"StreakLabel","Harvest Streak: 0x",
+	UDim2.new(1,0,0,20), UDim2.new(0,0,0,0),
+	12, Enum.Font.GothamMedium, C_TEXT2)
+streakLabelObj.ZIndex = 13
+
+local streakBarBg = Instance.new("Frame")
+streakBarBg.Name                   = "StreakBarBg"
+streakBarBg.Size                   = UDim2.new(1,0,0,10)
+streakBarBg.Position               = UDim2.new(0,0,0,22)
+streakBarBg.BackgroundColor3       = Color3.fromRGB(35,35,60)
+streakBarBg.BackgroundTransparency = 0
+streakBarBg.BorderSizePixel        = 0
+streakBarBg.ZIndex                 = 13
+streakBarBg.ClipsDescendants       = true
+streakBarBg.Parent                 = streakMeter
+addCorner(streakBarBg, 5)
+
+local streakBarFill = Instance.new("Frame")
+streakBarFill.Name                   = "StreakBarFill"
+streakBarFill.Size                   = UDim2.new(0,0,1,0)
+streakBarFill.BackgroundColor3       = Color3.fromRGB(255,165,0)
+streakBarFill.BackgroundTransparency = 0
+streakBarFill.BorderSizePixel        = 0
+streakBarFill.ZIndex                 = 14
+streakBarFill.Parent                 = streakBarBg
+addCorner(streakBarFill, 5)
+
+local streakLostLbl = makeLabel(streakMeter,"StreakLostLabel","Streak Lost!",
+	UDim2.new(1,0,0,16), UDim2.new(0,0,0,36),
+	12, Enum.Font.GothamBold, C_RED)
+streakLostLbl.ZIndex  = 15
+streakLostLbl.Visible = false
+
+-- ── Milestone Tracker (centred, below streak) ─────────────────────────────────
+local milestoneTrack = Instance.new("Frame")
+milestoneTrack.Name                   = "MilestoneTracker"
+milestoneTrack.Size                   = UDim2.new(0,280,0,54)
+milestoneTrack.AnchorPoint            = Vector2.new(0.5,0)
+milestoneTrack.Position               = UDim2.new(0.5,0,0.82,0)
+milestoneTrack.BackgroundTransparency = 1
+milestoneTrack.BorderSizePixel        = 0
+milestoneTrack.ZIndex                 = 12
+milestoneTrack.Parent                 = mainArea
+
+local msFillLbl = makeLabel(milestoneTrack,"MilestoneLabel","Next: First Harvest (0/100)",
+	UDim2.new(1,0,0,20), UDim2.new(0,0,0,0),
+	11, Enum.Font.Gotham, C_TEXT2)
+msFillLbl.ZIndex = 13
+
+local msBarBg = Instance.new("Frame")
+msBarBg.Name                   = "MilestoneBarBg"
+msBarBg.Size                   = UDim2.new(1,0,0,10)
+msBarBg.Position               = UDim2.new(0,0,0,22)
+msBarBg.BackgroundColor3       = Color3.fromRGB(35,35,60)
+msBarBg.BorderSizePixel        = 0
+msBarBg.ZIndex                 = 13
+msBarBg.ClipsDescendants       = true
+msBarBg.Parent                 = milestoneTrack
+addCorner(msBarBg, 5)
+
+local msBarFill = Instance.new("Frame")
+msBarFill.Name                   = "MilestoneBarFill"
+msBarFill.Size                   = UDim2.new(0,0,1,0)
+msBarFill.BackgroundColor3       = Color3.fromRGB(76,175,80)
+msBarFill.BorderSizePixel        = 0
+msBarFill.ZIndex                 = 14
+msBarFill.Parent                 = msBarBg
+addCorner(msBarFill, 5)
+
+local msRewardChip = makeLabel(milestoneTrack,"RewardChip","",
+	UDim2.new(1,0,0,16), UDim2.new(0,0,0,38),
+	12, Enum.Font.GothamBold, C_GOLD)
+msRewardChip.ZIndex   = 15
+msRewardChip.Visible  = false
 
 -- ── BOTTOM BAR ────────────────────────────────────────────────────────────────
+-- Fixed pixel height, full width, pinned to the bottom.
 local bottomBar = Instance.new("Frame")
 bottomBar.Name                   = "BottomBar"
-bottomBar.Size                   = UDim2.new(1,0,0.07,0)
+bottomBar.Size                   = UDim2.new(1,0,0,BOTTOM_H)
 bottomBar.AnchorPoint            = Vector2.new(0,1)
 bottomBar.Position               = UDim2.new(0,0,1,0)
 bottomBar.BackgroundColor3       = C_PANEL
-bottomBar.BackgroundTransparency = 0.15
+bottomBar.BackgroundTransparency = 0
 bottomBar.BorderSizePixel        = 0
 bottomBar.ZIndex                 = 10
 bottomBar.Parent                 = screenGui
 
+-- Thin accent line at the top of the bottom bar
+local bottomBarLine = Instance.new("Frame")
+bottomBarLine.Name              = "TopLine"
+bottomBarLine.Size              = UDim2.new(1,0,0,1)
+bottomBarLine.BackgroundColor3  = C_BORDER
+bottomBarLine.BorderSizePixel   = 0
+bottomBarLine.ZIndex            = 11
+bottomBarLine.Parent            = bottomBar
+
 local bbLayout = Instance.new("UIListLayout")
-bbLayout.FillDirection   = Enum.FillDirection.Horizontal
-bbLayout.Padding         = UDim.new(0,6)
-bbLayout.VerticalAlignment = Enum.VerticalAlignment.Center
-bbLayout.HorizontalAlignment = Enum.HorizontalAlignment.Left
-bbLayout.SortOrder       = Enum.SortOrder.LayoutOrder
-bbLayout.Parent          = bottomBar
+bbLayout.FillDirection          = Enum.FillDirection.Horizontal
+bbLayout.Padding                = UDim.new(0,6)
+bbLayout.VerticalAlignment      = Enum.VerticalAlignment.Center
+bbLayout.HorizontalAlignment    = Enum.HorizontalAlignment.Left
+bbLayout.SortOrder              = Enum.SortOrder.LayoutOrder
+bbLayout.Parent                 = bottomBar
 addPadding(bottomBar, 6, 8, 6, 8)
 
-local buyModes = {{"BuyModeX1","x1",1,true},{"BuyModeX10","x10",2,false},{"BuyModeX100","x100",3,false},{"BuyModeMax","Max",4,false}}
+local buyModes = {
+	{"BuyModeX1","x1",1,true},
+	{"BuyModeX10","x10",2,false},
+	{"BuyModeX100","x100",3,false},
+	{"BuyModeMax","Max",4,false},
+}
 for _, bm in ipairs(buyModes) do
 	local bb = Instance.new("TextButton")
 	bb.Name             = bm[1]
 	bb.Text             = bm[2]
-	bb.Size             = UDim2.new(0,60,0,36)
-	bb.BackgroundColor3 = bm[4] and C_ACCENT or C_LOCKED
-	bb.TextColor3       = bm[4] and C_BASE or C_TEXT
+	bb.Size             = UDim2.new(0,58,0,34)
+	bb.BackgroundColor3 = bm[4] and C_ACCENT or C_PANEL2
+	bb.TextColor3       = bm[4] and Color3.fromRGB(18,18,32) or C_TEXT
 	bb.TextSize         = 14
 	bb.Font             = Enum.Font.GothamBold
 	bb.BorderSizePixel  = 0
 	bb.LayoutOrder      = bm[3]
 	bb.ZIndex           = 11
 	bb.Parent           = bottomBar
-	addCorner(bb, 8)
+	addCorner(bb, 7)
 end
 
--- Auto toggle (locked)
+-- Auto toggle (locked, greyed out)
 local autoBtn = Instance.new("TextButton")
 autoBtn.Name             = "AutoToggle"
 autoBtn.Text             = "Auto 🔒"
-autoBtn.Size             = UDim2.new(0,80,0,36)
+autoBtn.Size             = UDim2.new(0,78,0,34)
 autoBtn.BackgroundColor3 = C_LOCKED
 autoBtn.TextColor3       = C_MUTED
-autoBtn.TextSize         = 13
+autoBtn.TextSize         = 12
 autoBtn.Font             = Enum.Font.GothamMedium
 autoBtn.BorderSizePixel  = 0
 autoBtn.LayoutOrder      = 5
 autoBtn.ZIndex           = 11
 autoBtn.Parent           = bottomBar
-addCorner(autoBtn, 8)
+addCorner(autoBtn, 7)
 
 -- ── POPUPS LAYER ──────────────────────────────────────────────────────────────
 local popupsLayer = Instance.new("Frame")
@@ -1212,11 +1273,11 @@ local gui=player:WaitForChild("PlayerGui"):WaitForChild("CarrotClickerGui")
 local mainArea=gui:WaitForChild("MainArea")
 local plate=mainArea:WaitForChild("CarrotButtonPlate")
 local ring=plate:WaitForChild("GlowRing")
--- Glow ring pulse
+-- Glow ring pulse (matches initial size of 1.08 scale)
 local function pulse()
-	TweenService:Create(ring,TweenInfo.new(1,Enum.EasingStyle.Sine,Enum.EasingDirection.InOut),{BackgroundTransparency=0.0,Size=UDim2.new(1.04,0,1.04,0)}):Play()
+	TweenService:Create(ring,TweenInfo.new(1,Enum.EasingStyle.Sine,Enum.EasingDirection.InOut),{BackgroundTransparency=0.65,Size=UDim2.new(1.14,0,1.14,0)}):Play()
 	task.delay(1,function()
-		TweenService:Create(ring,TweenInfo.new(1,Enum.EasingStyle.Sine,Enum.EasingDirection.InOut),{BackgroundTransparency=0.15,Size=UDim2.new(1,0,1,0)}):Play()
+		TweenService:Create(ring,TweenInfo.new(1,Enum.EasingStyle.Sine,Enum.EasingDirection.InOut),{BackgroundTransparency=0.82,Size=UDim2.new(1.08,0,1.08,0)}):Play()
 	end)
 end
 task.spawn(function() while true do pulse(); task.wait(2) end end)
